@@ -4,8 +4,8 @@ metadata:
   name: postgresql-postgresql
   namespace: devtroncd
   labels:
-    app.kubernetes.io/managed-by: Helm
-    release: devtron
+    app: postgresql
+    release: "devtron"
   annotations:
     "helm.sh/resource-policy": keep
     "meta.helm.sh/release-name": devtron
@@ -19,13 +19,14 @@ spec:
   selector:
     matchLabels:
       app: postgresql
-      release: devtron
+      release: "devtron"
       role: master
   template:
     metadata:
       labels:
         app: postgresql
-        release: devtron
+        chart: postgresql-8.6.4
+        release: "devtron"
         role: master
     spec:
       serviceAccountName: devtron-default-sa
