@@ -193,7 +193,7 @@ spec:
             defaultMode: 0555
   volumeClaimTemplates:
     - metadata:
-        name: data
+        name: devtron
       spec:
         accessModes:
           - ReadWriteOnce
