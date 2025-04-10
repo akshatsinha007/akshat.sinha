@@ -41,7 +41,7 @@ spec:
             runAsGroup: 999
             runAsNonRoot: true
             runAsUser: 999
-          image: mirror.gcr.io/postgres:14
+          image: quay.io/devtron/postgres:14.9
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -65,7 +65,7 @@ spec:
             runAsGroup: 999
             runAsNonRoot: true
             runAsUser: 999
-          image: mirror.gcr.io/postgres:14
+          image: quay.io/devtron/postgres:14.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: tcp-postgresql
