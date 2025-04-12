@@ -298,14 +298,14 @@
         "volumes": [
           {
             "configMap": {
-              "defaultMode": 0555,
+              "defaultMode": 555,
               "name": "postgresql-postgresql-customscripts"
             },
             "name": "customscripts-volume"
           },
           {
             "configMap": {
-              "defaultMode": 0555,
+              "defaultMode": 555,
               "name": "postgresql-postgresql-scripts"
             },
             "name": "initscripts"
