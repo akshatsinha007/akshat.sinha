@@ -1,0 +1,376 @@
+{
+  "apiVersion": "v1",
+  "data": {
+    "01-init-userdb.sh": "#!/bin/sh\ncreate_user()\n{\npsql -v ON_ERROR_STOP=1 --username \"$POSTGRES_USER\" -v USERDBNAME=\"$POSTGRES_DB\" -v USERDBUSER=\"$USERDB_USER\" -v USERDBPASSWORD=\"'$USERDB_PASSWORD'\" <<-EOSQL\n  CREATE USER :USERDBUSER WITH PASSWORD :USERDBPASSWORD;\n  GRANT ALL PRIVILEGES ON DATABASE :USERDBNAME TO :USERDBUSER;\nEOSQL\n}\nset -e\nif [ ! -z \"$POSTGRES_DB\" ] && [ ! -z \"$USERDB_USER\" ] && [ ! -z \"$USERDB_PASSWORD\" ]; then\n  create_user\nfi\n",
+    "init.sh": "#!/bin/sh\necho \"Start initialization\"\necho \"Copy init-userdb script\"\ncp /initscripts/01-init-userdb.sh /scripts\nif [ -d /extrascripts ]; then\n  echo \"Copy extra scripts\"\n  cp /extrascripts/* /scripts\nfi\nif [ -d /customscripts ]; then\n  echo \"Copy custom scripts\"\n  cp /customscripts/* /scripts\nfi\nif [ -d /customconfig ]; then\n  echo \"Create postgres config\"\n  cat /customconfig/* >>/configs/postgresql.conf\nfi\nif [ -d /extraconfigs ]; then\n  echo \"Add extra configs to postgres config\"\n  cat /extraconfigs/* >>/configs/postgresql.conf\nfi\necho \"Initialization done.\"\n"
+  },
+  "kind": "ConfigMap",
+  "metadata": {
+    "annotations": {
+      "helm.sh/hook": "pre-install",
+      "helm.sh/hook-weight": "-2",
+      "helm.sh/resource-policy": "keep",
+      "meta.helm.sh/release-name": "devtron",
+      "meta.helm.sh/release-namespace": "devtroncd"
+    },
+    "labels": {
+      "app.kubernetes.io/instance": "devtron",
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/name": "postgres"
+    },
+    "name": "postgresql-postgresql-scripts",
+    "namespace": "devtroncd"
+  }
+},
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "annotations": {
+      "helm.sh/resource-policy": "keep",
+      "meta.helm.sh/release-name": "devtron",
+      "meta.helm.sh/release-namespace": "devtroncd"
+    },
+    "labels": {
+      "app": "postgresql",
+      "release": "devtron"
+    },
+    "name": "postgresql-postgresql",
+    "namespace": "devtroncd"
+  },
+  "spec": {
+    "podManagementPolicy": "OrderedReady",
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "postgresql",
+        "release": "devtron",
+        "role": "master"
+      }
+    },
+    "serviceName": "postgresql-postgresql",
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "postgresql",
+          "chart": "postgresql-8.6.4",
+          "release": "devtron",
+          "role": "master"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "DATA_SOURCE_PASS",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "postgresql-password",
+                    "name": "postgresql-postgresql"
+                  }
+                }
+              },
+              {
+                "name": "DATA_SOURCE_URI",
+                "value": "127.0.0.1:5432/orchestrator?sslmode=disable"
+              },
+              {
+                "name": "DATA_SOURCE_USER",
+                "value": "postgres"
+              }
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "devtron-common-cm"
+                }
+              }
+            ],
+            "image": "quay.io/devtron/postgres_exporter:v0.10.1",
+            "imagePullPolicy": "IfNotPresent",
+            "livenessProbe": {
+              "failureThreshold": 6,
+              "httpGet": {
+                "path": "/",
+                "port": "http-metrics"
+              },
+              "initialDelaySeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "name": "metrics",
+            "ports": [
+              {
+                "containerPort": 9187,
+                "name": "http-metrics"
+              }
+            ],
+            "readinessProbe": {
+              "failureThreshold": 6,
+              "httpGet": {
+                "path": "/",
+                "port": "http-metrics"
+              },
+              "initialDelaySeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            }
+          },
+          {
+            "env": [
+              {
+                "name": "PGDATA",
+                "value": "/var/lib/postgresql/data/pg"
+              },
+              {
+                "name": "POSTGRES_HOST_AUTH_METHOD",
+                "value": "md5"
+              },
+              {
+                "name": "POSTGRES_INITDB_ARGS",
+                "value": "--auth-local=md5"
+              },
+              {
+                "name": "POSTGRES_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "postgresql-password",
+                    "name": "postgresql-postgresql"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRES_USER",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "POSTGRES_USER",
+                    "name": "postgresql-postgresql"
+                  }
+                }
+              }
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "devtron-common-cm"
+                }
+              },
+              {
+                "secretRef": {
+                  "name": "postgresql-postgresql"
+                }
+              }
+            ],
+            "image": "quay.io/devtron/postgres:14.9",
+            "imagePullPolicy": "IfNotPresent",
+            "livenessProbe": {
+              "exec": {
+                "command": [
+                  "-c",
+                  "pg_isready -h localhost",
+                  "sh"
+                ]
+              },
+              "failureThreshold": 3,
+              "initialDelaySeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "name": "postgres",
+            "ports": [
+              {
+                "containerPort": 5432,
+                "name": "tcp-postgresql",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "-c",
+                  "pg_isready -h localhost",
+                  "sh"
+                ]
+              },
+              "failureThreshold": 3,
+              "initialDelaySeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "privileged": false,
+              "readOnlyRootFilesystem": true,
+              "runAsGroup": 999,
+              "runAsNonRoot": true,
+              "runAsUser": 999
+            },
+            "startupProbe": {
+              "exec": {
+                "command": [
+                  "-c",
+                  "pg_isready -h localhost",
+                  "sh"
+                ]
+              },
+              "failureThreshold": 30,
+              "initialDelaySeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/docker-entrypoint-initdb.d",
+                "name": "scripts"
+              },
+              {
+                "mountPath": "/etc/postgresql",
+                "name": "configs"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              },
+              {
+                "mountPath": "/var/lib/postgresql/data",
+                "name": "devtron"
+              },
+              {
+                "mountPath": "/var/run",
+                "name": "run"
+              }
+            ]
+          }
+        ],
+        "initContainers": [
+          {
+            "command": [
+              "/initscripts/init.sh"
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "devtron-common-cm"
+                }
+              }
+            ],
+            "image": "quay.io/devtron/postgres:14.9",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "postgres-init",
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "privileged": false,
+              "readOnlyRootFilesystem": true,
+              "runAsGroup": 999,
+              "runAsNonRoot": true,
+              "runAsUser": 999
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/configs",
+                "name": "configs"
+              },
+              {
+                "mountPath": "/customscripts",
+                "name": "customscripts-volume"
+              },
+              {
+                "mountPath": "/initscripts",
+                "name": "initscripts"
+              },
+              {
+                "mountPath": "/scripts",
+                "name": "scripts"
+              }
+            ]
+          }
+        ],
+        "securityContext": {
+          "fsGroup": 999
+        },
+        "serviceAccountName": "devtron-default-sa",
+        "volumes": [
+          {
+            "configMap": {
+              "defaultMode": 555,
+              "name": "postgresql-postgresql-customscripts"
+            },
+            "name": "customscripts-volume"
+          },
+          {
+            "configMap": {
+              "defaultMode": 555,
+              "name": "postgresql-postgresql-scripts"
+            },
+            "name": "initscripts"
+          },
+          {
+            "emptyDir": {},
+            "name": "configs"
+          },
+          {
+            "emptyDir": {},
+            "name": "run"
+          },
+          {
+            "emptyDir": {},
+            "name": "scripts"
+          },
+          {
+            "emptyDir": {},
+            "name": "tmp"
+          }
+        ]
+      }
+    },
+    "updateStrategy": {
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "devtron"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": "20Gi"
+            }
+          }
+        }
+      }
+    ]
+  }
+},
+{
+  "apiVersion": "v1",
+  "data": {
+    "db_create.sql": "create database casbin;\ncreate database git_sensor;\ncreate database lens;\ncreate database clairv4;\n"
+  },
+  "kind": "ConfigMap",
+  "metadata": {
+    "annotations": {
+      "helm.sh/hook": "pre-install",
+      "helm.sh/hook-weight": "-2",
+      "helm.sh/resource-policy": "keep",
+      "meta.helm.sh/release-name": "devtron",
+      "meta.helm.sh/release-namespace": "devtroncd"
+    },
+    "labels": {
+      "app.kubernetes.io/instance": "devtron",
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/name": "postgres"
+    },
+    "name": "postgresql-postgresql-customscripts",
+    "namespace": "devtroncd"
+  }
+}
