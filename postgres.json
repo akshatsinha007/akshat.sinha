@@ -21,7 +21,7 @@
     "name": "postgresql-postgresql-scripts",
     "namespace": "devtroncd"
   }
-},
+}
 {
   "apiVersion": "apps/v1",
   "kind": "StatefulSet",
@@ -350,7 +350,7 @@
       }
     ]
   }
-},
+}
 {
   "apiVersion": "v1",
   "data": {
