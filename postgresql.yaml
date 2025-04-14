@@ -197,7 +197,7 @@ spec:
             - mountPath: /tmp
               name: tmp
             - mountPath: /var/lib/postgresql/data
-              name: devtron
+              name: data
             - mountPath: /docker-entrypoint-initdb.d
               name: scripts
             - mountPath: /etc/postgresql
@@ -258,7 +258,7 @@ spec:
             defaultMode: 0555
   volumeClaimTemplates:
     - metadata:
-        name: devtron
+        name: data
       spec:
         accessModes:
           - ReadWriteOnce
