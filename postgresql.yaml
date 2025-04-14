@@ -36,7 +36,7 @@ spec:
   ports:
     - name: tcp-postgresql
       port: 5432
-      targetPort: tcp-postgresql
+      targetPort: 5432
   selector:
     app: postgresql
     release: "devtron"
@@ -58,7 +58,7 @@ spec:
   ports:
     - name: tcp-postgresql
       port: 5432
-      targetPort: tcp-postgresql
+      targetPort: 5432
   selector:
     app: postgresql
     release: "devtron"
