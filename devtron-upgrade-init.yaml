@@ -43,7 +43,7 @@ spec:
             kubectl scale deploy -n argo --all --replicas=0
             kubectl get sts -n devtroncd -o name | grep -v "statefulset.apps/postgresql-postgresql" | xargs -I{} kubectl scale {} -n devtroncd --replicas=0
             while true; do
-                running_devtroncd=$(kubectl get pods -n devtroncd | grep -vE "postgresql-postgresql|app-sync-cronjob-|app-manual-sync-job-|devtron-upgrade-init-" | grep -c "Running")
+                running_devtroncd=$(kubectl get pods -n devtroncd | grep -vE "postgresql-postgresql|app-sync-cronjob-|app-manual-sync-job-|devtron-upgrade-init-|app-sync-job-" | grep -c "Running")
                 running_argo=$(kubectl get pods -n argo | grep -c "Running")
                 total_running=$((running_devtroncd + running_argo))
                 if [[ "$total_running" -eq 0 ]]; then
@@ -80,7 +80,7 @@ spec:
               kubectl patch configmap devtron-postgres-upgrade -n devtroncd --type merge -p '{"data": {"ERROR": "Step-1 :Backup file was not created or is empty!"}}'
               exit 1
             fi
-            kubectl patch configmap devtron-postgres-upgrade devtron-custom-cm -n devtroncd --type merge -p '{"data": {"POSTGRES_BACKED_UP": "true"}}' &> /dev/null
+            kubectl patch configmap devtron-postgres-upgrade -n devtroncd --type merge -p '{"data": {"POSTGRES_BACKED_UP": "true"}}' &> /dev/null
             echo "First Checkpoint Reached, check the documentation for next steps <doclink> 🚀"
         volumeMounts:
         - name: backup-storage
