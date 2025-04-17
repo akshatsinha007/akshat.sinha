@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: Devtron-Upgrade-init
+  name: devtron-Upgrade-init
   namespace: devtroncd
 spec:
   backoffLimit: 0
