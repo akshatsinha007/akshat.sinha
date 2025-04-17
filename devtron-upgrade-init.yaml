@@ -11,7 +11,7 @@ spec:
       tolerations:
         - operator: "Exists"
       containers:
-      - name: postgres-backup-runner
+      - name: upgrade-initializer
         image: mirror.gcr.io/irawal007/kubectl:28f6c5c6-8489-66897
         env:
           - name: PGHOST
@@ -77,12 +77,11 @@ spec:
               ls -lh "${BACKUP_TARGET}"
             else
               echo "[$(date)] ❌ ERROR: Backup file '${BACKUP_TARGET}' was not created or is empty!"
-              kubectl patch configmap postgres-upgrade -n devtroncd --type merge -p '{"data": {"ERROR": "Step-1 :Backup file was not created or is empty!"}}'
+              kubectl patch configmap devtron-postgres-upgrade -n devtroncd --type merge -p '{"data": {"ERROR": "Step-1 :Backup file was not created or is empty!"}}'
               exit 1
             fi
-            kubectl patch configmap devtron-custom-cm -n devtroncd --type merge -p '{"data": {"POSTGRES_BACKED_UP": "true"}}' &> /dev/null
-
-            echo "First Checkpoint Reached. You can now proceed to the next level. <doclink> 🚀"
+            kubectl patch configmap devtron-postgres-upgrade devtron-custom-cm -n devtroncd --type merge -p '{"data": {"POSTGRES_BACKED_UP": "true"}}' &> /dev/null
+            echo "First Checkpoint Reached, check the documentation for next steps <doclink> 🚀"
         volumeMounts:
         - name: backup-storage
           mountPath: /backup-data
