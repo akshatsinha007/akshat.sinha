@@ -91,6 +91,6 @@ spec:
       volumes:
       - name: backup-storage
         persistentVolumeClaim:
-          claimName: devtron-postgres-backup-pvc
+          claimName: devtron-db-upgrade-pvc
       restartPolicy: Never
       serviceAccountName: devtron
