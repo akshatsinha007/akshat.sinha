@@ -100,7 +100,7 @@ spec:
       labels:
         app.kubernetes.io/name: postgres
         app.kubernetes.io/instance: devtron
-    spec:
+    spec:      
       serviceAccountName: devtron-default-sa
       securityContext:
         fsGroup: 999
@@ -264,7 +264,7 @@ spec:
         name: data
       spec:
         accessModes:
-          - ReadWriteOnce
+          - ReadWriteOnce        
         resources:
           requests:
             storage: 20Gi
